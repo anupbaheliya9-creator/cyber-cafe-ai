@@ -4,23 +4,24 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cyber Cafe & Legal AI Assistant</title>
+  <link rel="manifest" href="manifest.json">
   <style>
-    body { font-family: sans-serif; margin: 0; padding: 0; background: #f0f2f5; display: flex; flex-direction: column; height: 100vh; }
-    .header { background: #1a73e8; color: white; padding: 15px; text-align: center; font-weight: bold; font-size: 1.1rem; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background: #f0f2f5; display: flex; flex-direction: column; height: 100vh; }
+    .header { background: #1a73e8; color: white; padding: 15px; text-align: center; font-weight: bold; font-size: 1.1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
     .chat-container { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-    .message { padding: 10px 14px; border-radius: 12px; max-width: 80%; word-wrap: break-word; }
+    .message { padding: 10px 14px; border-radius: 12px; max-width: 85%; word-wrap: break-word; line-height: 1.4; white-space: pre-wrap; }
     .user-msg { background: #dcf8c6; align-self: flex-end; color: #000; }
     .ai-msg { background: #ffffff; align-self: flex-start; color: #000; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     .controls { display: flex; padding: 10px; background: #fff; border-top: 1px solid #ddd; gap: 8px; }
-    input[type="text"] { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 20px; outline: none; }
-    button { background: #1a73e8; color: white; border: none; padding: 10px 18px; border-radius: 20px; font-weight: bold; cursor: pointer; }
+    input[type="text"] { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 20px; outline: none; font-size: 1rem; }
+    button { background: #1a73e8; color: white; border: none; padding: 10px 18px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
     .voice-btn { background: #34a853; }
   </style>
 </head>
 <body>
-  <div class="header">Cyber Cafe, Legal & Sahara AI Agent</div>
+  <div class="header">Cyber Cafe, Legal & Digital Utility AI</div>
   <div class="chat-container" id="chat">
-    <div class="message ai-msg">नमस्ते! मैं आपका ऑल-इन-वन साइबर कैफ़े और लीगल असिस्टेंट हूँ। बताइए आज क्या सेवा चाहिए?</div>
+    <div class="message ai-msg">नमस्ते! मैं आपका ऑल-इन-वन साइबर कैफ़े और लीगल डिजिटल एजेंट हूँ। बताइए आज क्या काम करना है?</div>
   </div>
   <div class="controls">
     <input type="text" id="userInput" placeholder="यहाँ लिखें या बोलें...">
@@ -29,24 +30,80 @@
   </div>
 
   <script>
-    function sendMsg() {
+    const API_KEY = "AQ.Ab8RN6KfmSGaWpUHMYoDkk1b307PHqStBuzbw0vyDqiNZH9ITQ";
+
+    const SYSTEM_PROMPT = `
+[SYSTEM INSTRUCTION: MASTER AGENT V10.0 - CYBER CAFE, LEGAL & DIGITAL UTILITY ENGINE]
+
+1. CORE IDENTITY & ROLE:
+   - Name: All-in-One Cyber Cafe, Legal & Digital Utility AI Assistant.
+   - Purpose: Act as an expert operational assistant for Cyber Cafe owners, staff, and direct walk-in clients across India.
+   - Core Domains: Government Portal Services (CSC, PAN, Aadhar, Passport, Driving License), Legal Documentation & Drafts, Sahara Refund Portal Intake, Online Job Application Procedures, and Daily Utility Tools.
+   - Language & Tone: Professional, highly clear, empathetic, and fluent in Hinglish, Hindi, and English. Adapt language to match user input automatically.
+
+2. OPERATIONAL KNOWLEDGE BASE & WORKFLOWS:
+   A. SAHARA REFUND PORTAL INTAKE:
+      - Triage claimants step-by-step: Membership Number, Deposit Account Number, Unique Certificate/Passbook No., Aadhaar-linked Mobile Number, and Bank Seeded Aadhaar Details.
+      - Guide through re-submission (CRCS portal) error codes (e.g., Name Mismatch, Defect Responses).
+   B. LEGAL & AFFIDAVIT DRAFTING:
+      - Provide instant draft templates for: Name Change Affidavits, Loss of Document (FIR/Affidavit), Income/Caste Certificate Declarations, Rental Agreements, and General Power of Attorney formats.
+      - Always include procedural steps: Required Stamp Paper value (e.g., ₹10, ₹50, ₹100 depending on state), Notary/Magistrate verification needs, and supporting identity proofs.
+   C. GOVT PORTAL & CYBER CAFE SERVICES:
+      - Step-by-step guidance for CSC, Voter ID, Ayushman Card, e-Shram, Income/Caste/Domicile certificates, Passport Sewa, and PVC Card orders.
+      - Exact photo/signature resize specifications (e.g., 20KB-50KB JPG, 200 DPI) and document format requirements (PDF < 300KB).
+   D. SARKARI JOB & ONLINE FORMS:
+      - Eligibility verification, age relaxation checks, required document checklists, and fee payment guidance.
+
+3. RESPONSE RULES & GUARDRAILS:
+   - Direct Answers First: Provide clear, actionable steps immediately without fluff.
+   - Legal Disclaimer: For legal drafts/advice, append a concise notice: "यह प्रारूप केवल सहायता के लिए है। औपचारिक उपयोग से पूर्व स्थानीय नोटरी या अधिवक्ता से सत्यापित कराएं।"
+   - Structure: Use clean formatting, numbered steps, and key-value bullet points for document checklists.
+   - Missing Info Handling: If a user query lacks detail (e.g., state name for stamp duty or specific job post), ask a single clarifying question while providing the general procedural template.
+`;
+
+    async function sendMsg() {
       let input = document.getElementById('userInput');
-      if(!input.value.trim()) return;
+      let userText = input.value.trim();
+      if(!userText) return;
+      
       let chat = document.getElementById('chat');
-      chat.innerHTML += `<div class="message user-msg">${input.value}</div>`;
-      let text = input.value;
+      chat.innerHTML += `<div class="message user-msg">${userText}</div>`;
       input.value = '';
       chat.scrollTop = chat.scrollHeight;
 
-      setTimeout(() => {
-        chat.innerHTML += `<div class="message ai-msg">प्रोसेसिंग चालू है: "${text}" के लिए v10.0 इंजन रिस्पॉन्स तैयार कर रहा है...</div>`;
-        chat.scrollTop = chat.scrollHeight;
-      }, 600);
+      let loadingDiv = document.createElement('div');
+      loadingDiv.className = 'message ai-msg';
+      loadingDiv.innerText = 'सोच रहा हूँ...';
+      chat.appendChild(loadingDiv);
+      chat.scrollTop = chat.scrollHeight;
+
+      try {
+        let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [
+              { role: "user", parts: [{ text: SYSTEM_PROMPT + "\n\nUser Question: " + userText }] }
+            ]
+          })
+        });
+
+        let data = await response.json();
+        if (data.candidates && data.candidates[0].content.parts[0].text) {
+          loadingDiv.innerText = data.candidates[0].content.parts[0].text;
+        } else {
+          loadingDiv.innerText = "उत्तर प्राप्त करने में समस्या आई। कृपया अपनी API Key की वैधता जांचें।";
+        }
+      } catch (err) {
+        loadingDiv.innerText = "कनेक्शन में समस्या आई। नेटवर्क की जांच करें।";
+      }
+      chat.scrollTop = chat.scrollHeight;
     }
 
     function startVoice() {
-      if ('webkitSpeechRecognition' in window) {
-        let recognition = new webkitSpeechRecognition();
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        let SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition = new SpeechRecognition();
         recognition.lang = 'hi-IN';
         recognition.onresult = function(event) {
           document.getElementById('userInput').value = event.results[0][0].transcript;
@@ -59,4 +116,3 @@
   </script>
 </body>
 </html>
-￼Enter
